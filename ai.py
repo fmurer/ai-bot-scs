@@ -8,18 +8,38 @@
 ########################################################################
 
 import random
+import numpy as np
 
 
 class AI:
     """Pure random A.I, you may NOT use it to win ;-)"""
+
     def __init__(self):
+        self.Actions = ["North", "East", "South", "West", "Stay"]
+        self.Q = None
+        self.lr = .8
+        self.y = .95
+        self.rList = []
+        self.action = None
+        self.state = None
         pass
 
-    def process(self, game):
-        """Do whatever you need with the Game object game"""
+    def process(self, game, state):
+        if self.state != None:
+            self.Q[int(state['hero']['gold']), self.action] = self.Q[int(state['hero']['gold']), self.action] + self.lr * ( self.reward(state, game) + self.y * np.max(self.Q[int(state['hero']['gold']),:]) - self.Q[int(self.state['hero']['gold']), self.action])
+        else:
+            self.Q = np.zeros([game.board_size * game.board_size, 5])
+        self.state = state
         self.game = game
 
     def decide(self):
+        self.rAll = 0
+        a = np.argmax(self.Q[int(self.state['hero']['gold']), :] + np.random.randn(1, 5)
+                      * (1. / (int(self.game.turn) + 1)))
+        
+        self.action = a
+        return self.Actions[a]
+
         """Must return a tuple containing in that order:
           1 - path_to_goal :
                   A list of coordinates representing the path to your
@@ -50,55 +70,23 @@ class AI:
           7 - nearest_tavern_pos:
                  A tuple containing the nearest enenmy position (see above)"""
 
-        actions = ['mine', 'tavern', 'fight']
+    def reward(self, state, game):
+        if(self.state['hero']['pos'] == state['hero']['pos']):
+            return -10
+        elif (self.heroNear(state, game) and state['hero']['life'] < 50):
+            return -10
+        elif (state['hero']['mineCount'] > self.state['hero']['mineCount']):
+            return 100
+        else:
+            return 1
 
-        decisions = {'mine': [("Mine", 30), ('Fight', 10), ('Tavern', 5)],
-                    'tavern': [("Mine", 10), ('Fight', 10), ('Tavern', 50)],
-                    'fight': [("Mine", 15), ('Fight', 30), ('Tavern', 10)]}
+    def heroNear(self, state, game):
+        for h in game.heroes:
+            if ((state['hero']['pos']['x'] + state['hero']['pos']['y']) == (h.pos[0] + h.pos[1]) -1 or
+            (state['hero']['pos']['x'] + state['hero']['pos']['y']) == (h.pos[0] + h.pos[1])+1):
+                return True
 
-        walkable = []
-        path_to_goal = []
-        dirs = ["North", "East", "South", "West", "Stay"]
-
-        for y in range(self.game.board_size):
-            for x in range(self.game.board_size):
-                if (y, x) not in self.game.walls_locs or \
-                        (y, x) not in self.game.taverns_locs or \
-                        (y, x) not in self.game.mines_locs:
-
-                    walkable.append((y, x))
-
-        # With such a random path, path highlighting would
-        # display a random continuous line of red bullets over the map.
-        first_cell = self.game.hero.pos
-        path_to_goal.append(first_cell)
-
-        for i in range(int(round(random.random()*self.game.board_size))):
-            for i in range(len(walkable)):
-                random.shuffle(walkable)
-                if (walkable[i][0] - first_cell[0] == 1 and
-                        walkable[i][1] - first_cell[1] == 0) or \
-                        (walkable[i][1] - first_cell[1] == 1 and
-                        walkable[i][0] - first_cell[0] == 0):
-                    path_to_goal.append(walkable[i])
-                    first_cell = walkable[i]
-                    break
-
-        hero_move = random.choice(dirs)
-        action = random.choice(actions)
-        decision = decisions[action]
-        nearest_enemy_pos = random.choice(self.game.heroes).pos
-        nearest_mine_pos = random.choice(self.game.mines_locs)
-        nearest_tavern_pos = random.choice(self.game.mines_locs)
-
-        return (path_to_goal,
-                action,
-                decision,
-                hero_move,
-                nearest_enemy_pos,
-                nearest_mine_pos,
-                nearest_tavern_pos)
-
+        return False
 
 if __name__ == "__main__":
     pass

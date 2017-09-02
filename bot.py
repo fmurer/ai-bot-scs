@@ -38,35 +38,16 @@ class Curses_ui_bot:
     def move(self, state):
         """Return store data provided by A.I
         and return selected move"""
-        self.state = state        
-        # Store status for later report
-        try:
-            self.hero_last_move = self.hero_move
-            self.last_life = self.game.hero.life
-            self.last_action = self.action
-            self.last_gold = self.game.hero.gold
-            self.last_mine_count = self.game.hero.mine_count
-            self.last_pos = self.game.hero.pos
-            self.last_nearest_enemy_pos = self.nearest_enemy_pos
-            self.last_nearest_mine_pos = self.nearest_mine_pos
-            self.last_nearest_tavern_pos = self.nearest_tavern_pos
-        except AttributeError:
-            # First move has no previous move
-            pass
+        self.state = state
+
         self.game = Game(self.state)
         
         ################################################################
         # Put your call to AI code here
         ################################################################
+        self.ai.process(self.game, self.state)
 
-        self.ai.process(self.game)
-        self.path_to_goal, \
-            self.action, \
-            self.decision, \
-            self.hero_move, \
-            self.nearest_enemy_pos, \
-            self.nearest_mine_pos, \
-            self.nearest_tavern_pos = self.ai.decide()
+        self.hero_move = self.ai.decide()
 
         ################################################################
         # /AI
